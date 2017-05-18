@@ -62,11 +62,14 @@ class _MyHomePageState extends State<MyHomePage> {
 	static void _isolateEntryPoint(SendPort sender) {
 		final remoteReceive = new ReceivePort();
 		final mainSender = sender;
+
 		mainSender.send(remoteReceive.sendPort);
 		remoteReceive.listen((message) {
 			print("main message = $message");
 			mainSender.send(fibonacci(message));
+			print("done fibonacci");
 		});
+
 	}
 
 	@override
@@ -118,24 +121,18 @@ class _MyHomePageState extends State<MyHomePage> {
 	}
 
 	void _onMulti() {
-		_output = null;
-		updateView();
+		setState(() {
+			_result = "Fibonacci ($_input) outputs ...";
+		});
 		_remote_sender.send(_input);
 	}
 
 	void _onMain() {
 		_output = _input;
 		_output = fibonacci(_output);
-		updateView();
-	}
-
-	void updateView() {
 		setState(() {
-			_result = "Fibonacci ($_input) outputs ${(_output==null)? '...':_output}";
+			_result = "Fibonacci ($_input) outputs $_output";
 		});
-	}
-	static int fibonacci(int n) {
-		return n < 2 ? n : fibonacci(n - 1) + fibonacci(n - 2);
 	}
 
   void initIsolate() {
@@ -148,14 +145,25 @@ class _MyHomePageState extends State<MyHomePage> {
 	  _main_receive.listen((message) {
 		  if (message is SendPort) {
 			  _remote_sender = message;
+			  print("main hand-shaked = $message");
 		  } else {
 			  print("remote message = $message");
 			  _output = message;
-			  updateView();
+			  setState(() {
+				  _result = "Fibonacci ($_input) outputs $_output";
+			  });
 		  }
 	  });
 
-	  updateView();
+	  setState(() {
+		  _result = "Fibonacci ready ...";
+	  });
   }
 
+}
+
+int fibonacci(int n) {
+	if (n == 0) return 0;
+	if (n == 1) return 1;
+	return fibonacci(n - 1) + fibonacci(n - 2);
 }
